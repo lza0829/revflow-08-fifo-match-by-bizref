@@ -32,7 +32,7 @@ const maxCount = computed(() => {
           <p class="label">账户余额合计</p>
           <p class="amount">¥ {{ yuan(data.余额合计分) }}</p>
           <p class="hint">
-            待归并 {{ data.待归并 }} 笔
+            待归并 {{ data.待归并 }} 笔 · 部分归并 {{ data.部分归并 }} 笔 · FIFO 占用 {{ yuan(data.占用合计分) }} 元
             <template v-if="data.最近归并">
               · 最近归并 #{{ data.最近归并.id }}（隔离 {{ data.最近归并.quarantine_count }}）
             </template>
