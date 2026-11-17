@@ -25,7 +25,7 @@ async function runSettle() {
   msg.value = ''
   try {
     const r = await postJson('/api/settle-runs')
-    msg.value = `归并完成 #${r.id}：净额 ${(r.net_cents / 100).toFixed(2)}，隔离 ${r.quarantine_count}`
+    msg.value = `归并完成 #${r.id}：占用 ${(r.allocated_cents / 100).toFixed(2)}，净额 ${(r.net_cents / 100).toFixed(2)}，隔离 ${r.quarantine_count}，部分 ${r.partial_count}`
     await load()
   } catch (e) {
     err.value = String(e.message || e)
@@ -42,8 +42,8 @@ function yuan(cents) {
 <template>
   <div>
     <h1>归并台</h1>
-    <p class="lead">对「待归并」正向与冲正跑一轮净额归并：配平落余额，无原单/超额进隔离。</p>
-    <p class="note-strip">本轮只处理状态为「待归并」的流水；隔离项不计入账户余额。</p>
+    <p class="lead">对「待归并」正向与冲正跑一轮净额归并：只带业务单的冲正按 FIFO 占用正向敞口，占用物化后配平落余额，未消化部分进隔离。</p>
+    <p class="note-strip">匹配、占用落库、余额写回与隔离写入在同一事务内完成；失败整体回滚。隔离项不计入账户余额。</p>
     <div class="row-actions">
       <button class="btn" :disabled="busy" @click="runSettle">跑净额归并</button>
     </div>
@@ -54,7 +54,7 @@ function yuan(cents) {
       <table>
         <thead>
           <tr>
-            <th>#</th><th>状态</th><th>正向</th><th>冲正</th><th>已归并</th><th>隔离</th><th>净额（元）</th><th>结束</th>
+            <th>#</th><th>状态</th><th>正向</th><th>冲正</th><th>已归并</th><th>部分</th><th>隔离</th><th>占用（元）</th><th>净额（元）</th><th>结束</th>
           </tr>
         </thead>
         <tbody>
@@ -64,11 +64,13 @@ function yuan(cents) {
             <td>{{ r.forward_count }}</td>
             <td>{{ r.reversal_count }}</td>
             <td>{{ r.settled_count }}</td>
+            <td>{{ r.partial_count }}</td>
             <td>{{ r.quarantine_count }}</td>
+            <td>{{ yuan(r.allocated_cents) }}</td>
             <td>{{ yuan(r.net_cents) }}</td>
             <td>{{ r.finished_at || '—' }}</td>
           </tr>
-          <tr v-if="!runs.length"><td colspan="8">尚无归并运行</td></tr>
+          <tr v-if="!runs.length"><td colspan="10">尚无归并运行</td></tr>
         </tbody>
       </table>
     </div>
